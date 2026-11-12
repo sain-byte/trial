@@ -6,6 +6,8 @@
   const THEMES = ['light', 'dark', 'blue', 'emerald'], NAMES = { light: 'Light', dark: 'Dark', blue: 'Blue', emerald: 'Emerald' };
   const DEFAULT_MENU = [['index', 'Dashboard'], ['summary', 'Summary'], ['breakdown', 'Breakdown'], ['custom', 'Custom'], ['analys', 'Analys']]
     .map((m, i) => ({ id: m[0], page_key: m[0], label: m[1], title: '', subtitle: '', order: i + 1, enabled: true }));
+  // Menu yang disembunyikan dari tombol navigasi (halamannya tidak dipakai lagi). Kosongkan [] untuk menampilkannya lagi.
+  const SEMBUNYIKAN = ['summary', 'breakdown'];
   let menu = null;
   const api = () => (typeof GAS_API_URL === 'string' ? GAS_API_URL : '');
   const q = s => document.querySelector(s);
@@ -64,7 +66,7 @@
     const box = q('.nav-buttons'); if (!box) return;
     box.querySelectorAll('a.nav-btn').forEach(a => a.remove());
     const anchor = box.querySelector('.nav-actions-right');
-    m.filter(x => x.enabled).sort((a, b) => a.order - b.order).forEach(x => {
+    m.filter(x => x.enabled && SEMBUNYIKAN.indexOf(x.page_key) < 0).sort((a, b) => a.order - b.order).forEach(x => {
       const a = document.createElement('a'); a.className = 'nav-btn' + (x.page_key === page() ? ' active' : '');
       a.href = x.page_key + '.html'; a.textContent = x.label; box.insertBefore(a, anchor);
     });
