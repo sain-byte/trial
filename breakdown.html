@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KPI Agent - Breakdown Poin (Page 2)</title>
+
+  <!-- Export & Chart Libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+ <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
+  <link rel="manifest" href="./site.webmanifest">
+  
+  <style>
+    :root {
+      --bg-color: #f4f6f9;
+      --card-bg: #ffffff;
+      --text-color: #333333;
+      --border-color: #e0e0e0;
+      --header-th-bg: #1565c0;
+      --header-th-border: #0d47a1;
+      --row-even: #f9f9f9;
+      --row-hover: #f1f1f1;
+    }
+
+    body.dark-mode {
+      --bg-color: #121212;
+      --card-bg: #1e1e1e;
+      --text-color: #e0e0e0;
+      --border-color: #333333;
+      --header-th-bg: #0d47a1;
+      --header-th-border: #1565c0;
+      --row-even: #242424;
+      --row-hover: #2c2c2c;
+    }
+
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+    body { background-color: var(--bg-color); color: var(--text-color); padding: 15px; transition: background 0.3s, color 0.3s; }
+    .container { max-width: 1650px; margin: 0 auto; }
+
+    /* Top Navigation Header */
+    .top-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: var(--card-bg); padding: 12px 18px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); flex-wrap: wrap; gap: 10px; }
+    .brand-title { font-size: 19px; font-weight: bold; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+    
+    .nav-buttons { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .nav-btn { padding: 7px 12px; border-radius: 6px; border: 1px solid #007bff; background: transparent; color: #007bff; font-weight: bold; font-size: 12px; cursor: pointer; text-decoration: none; transition: 0.2s; display: inline-block; }
+    .nav-btn.active { background: #007bff; color: #fff; }
+    
+    .nav-actions-right { display: flex; gap: 8px; align-items: center; border-left: 2px solid var(--border-color); padding-left: 10px; }
+    .nav-btn-theme { padding: 7px 12px; border-radius: 6px; border: 1px solid #f39c12; background: transparent; color: #f39c12; font-weight: bold; font-size: 12px; cursor: pointer; }
+    .nav-btn-admin { padding: 7px 12px; border-radius: 6px; border: 1px solid #dc3545; background: #dc3545; color: #fff; font-weight: bold; font-size: 12px; cursor: pointer; }
+    .nav-btn-admin.logged-in { background: #28a745; border-color: #28a745; }
+    .nav-btn-link { padding: 7px 12px; border-radius: 6px; border: 1px solid #6c757d; background: #6c757d; color: #fff; font-weight: bold; font-size: 12px; text-decoration: none; }
+
+    /* Collapsible Cards */
+    .card-box { background: var(--card-bg); padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 15px; border: 1px solid var(--border-color); }
+    .card-header-toggle { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
+    
+    .exec-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 12px; display: none; }
+    .exec-summary-grid.show { display: grid; }
+    
+    .exec-box { background: rgba(0,123,255,0.04); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px 12px; font-size: 11.5px; }
+    .exec-box h5 { font-size: 12px; margin-bottom: 6px; color: #007bff; display: flex; align-items: center; gap: 5px; }
+    .exec-list { max-height: 120px; overflow-y: auto; padding-right: 4px; display: flex; flex-direction: column; gap: 4px; }
+    .exec-item { font-size: 11px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border-color); padding-bottom: 2px; }
+
+    /* Filter Card with Wider Multi-Select */
+    .filter-card { background: var(--card-bg); padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 15px; border: 1px solid var(--border-color); }
+    .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; align-items: end; }
+    .form-group { display: flex; flex-direction: column; }
+    .form-group label { font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+    .form-group select, .form-group button, .form-group input { padding: 7px 9px; border-radius: 5px; border: 1px solid var(--border-color); font-size: 12px; background: var(--card-bg); color: var(--text-color); }
+    
+    /* Diperpanjang tinggi & ruang multi-select biar nama keliatan jelas */
+    .filter-multi-select { height: 95px !important; min-width: 180px; }
+    
+    .btn-submit { background-color: #007bff; color: white; border: none !important; font-weight: bold; cursor: pointer; height: 35px; }
+
+    /* Field Picker Grid */
+    .field-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 8px; margin-top: 12px; display: none; }
+    .field-picker-grid.show { display: grid; }
+    .field-checkbox { font-size: 11px; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+
+    /* Action Bar */
+    .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+    .action-left { display: flex; gap: 8px; align-items: center; }
+    .action-right { display: flex; gap: 8px; }
+    .btn-export { padding: 7px 12px; border-radius: 5px; border: none; font-size: 12px; font-weight: bold; cursor: pointer; color: white; }
+    .btn-excel { background-color: #1d6f42; }
+    .btn-jpg { background-color: #e67e22; }
+    .btn-png { background-color: #8e44ad; }
+    .btn-chart { background-color: #17a2b8; }
+
+    /* Table Container */
+    .table-container { background: var(--card-bg); border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow-x: auto; padding: 10px; position: relative; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; text-align: center; }
+    
+    thead th { background-color: var(--header-th-bg); color: white; padding: 8px 4px; font-weight: 600; border: 1px solid var(--header-th-border); cursor: pointer; user-select: none; }
+    thead th:hover { opacity: 0.9; }
+    
+    tbody td { padding: 7px 4px; border: 1px solid var(--border-color); white-space: nowrap; }
+    tbody tr:nth-child(even) { background-color: var(--row-even); }
+    tbody tr:hover { background-color: var(--row-hover); }
+    
+    .note-input {
+      width: 120px; padding: 3px 6px; border: 1px solid var(--border-color);
+      border-radius: 4px; background: var(--card-bg); color: var(--text-color);
+      font-size: 11px; transition: border-color 0.2s, background-color 0.3s;
+    }
+    .note-input:focus { border-color: #007bff; outline: none; }
+    .note-input.saving { background-color: #fff3cd; }
+    .note-input.saved { background-color: #d4edda; border-color: #28a745; }
+    .note-input:disabled { background-color: transparent; border: none; text-align: center; color: var(--text-color); }
+
+    .text-red { color: #d32f2f !important; font-weight: bold; }
+    
+    /* Toggle Style Badge Poin & Rank */
+    .badge-point { background-color: #2e7d32; color: white; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
+    .badge-rank { background-color: #1565c0; color: white; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
+    body.clean-style .badge-point, body.clean-style .badge-rank { background: transparent !important; color: inherit !important; font-weight: bold; padding: 0; }
+
+    .loading-text { text-align: center; padding: 20px; font-style: italic; color: #666; }
+
+    /* Modals */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 999; }
+    .modal-content { background: var(--card-bg); width: 90%; max-width: 900px; border-radius: 10px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+    .modal-close { font-size: 20px; font-weight: bold; cursor: pointer; border: none; background: transparent; color: var(--text-color); }
+    .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+    .search-wrap { display: flex; flex-direction: column; gap: 4px; min-width: 210px; }
+    .search-wrap label { font-size: 10px; font-weight: 700; color: #7b8490; }
+    .search-wrap input { min-width: 210px; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--card-bg); color: var(--text-color); font-size: 12px; }
+  </style>
+<script src="kpi-core.js"></script>
+<script src="bakar.js"></script>
+<script src="filter-ui.js"></script>
+</head>
+<body>
+
+<div class="container">
+  <!-- Top Navigation Header -->
+  <header class="top-header">
+    <div class="brand-title">
+      <span>🔢</span> <span>KPI Agent - Breakdown</span>
+    </div>
+    <div class="nav-buttons">
+      <a href="index.html" class="nav-btn">Dashboard</a>
+      <a href="summary.html" class="nav-btn">Summary</a>
+      <a href="breakdown.html" class="nav-btn active">Breakdown</a>
+      <a href="custom.html" class="nav-btn">Custom</a>
+      <a href="analys.html" class="nav-btn">Analys</a>
+
+      <div class="nav-actions-right">
+        <button class="nav-btn-theme" onclick="toggleTheme()">🌙 / ☀️</button>
+        <button class="nav-btn-admin" id="btnAdmin" onclick="toggleAdminLogin()">🔒 Login Admin</button>
+        <a href="https://sain-byte.github.io/eskalasi/" target="_blank" class="nav-btn-link">Eskalasi ↗</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Executive Summary Card (Collapsible) -->
+  <div class="card-box">
+    <div class="card-header-toggle" onclick="toggleExecSummary()">
+      <strong style="font-size: 12px; color: #1565c0;">📋 Executive Summary Snapshot (Klik untuk Expand/Hide)</strong>
+      <span id="execToggleIcon" style="font-size: 14px; font-weight: bold;">▼</span>
+    </div>
+    <div class="exec-summary-grid" id="execSummaryGrid">
+      <div class="exec-box">
+        <h5>👥 Total Active Agents</h5>
+        <div id="execTotalAgent" style="font-size: 15px; font-weight: bold; margin-top: 5px;">0 Agent</div>
+      </div>
+      <div class="exec-box">
+        <h5>🏷️ Section Breakdown</h5>
+        <div class="exec-list" id="execSectionBreakdown">Loading...</div>
+      </div>
+      <div class="exec-box">
+        <h5>👔 Team Leader & Agents Mapping</h5>
+        <div class="exec-list" id="execTlMapping">Loading...</div>
+      </div>
+      <div class="exec-box">
+        <h5>⚠️ Attention Needed & Top #1</h5>
+        <div class="exec-list" id="execAlerts">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter Card (Multi-Select TL & Skill Diperpanjang) -->
+  <div class="filter-card">
+    <div class="filter-grid">
+      <div class="form-group">
+        <label>Mode Periode</label>
+        <select id="filterMode" onchange="updatePeriodOptions()">
+          <option value="weekly" selected>Weekly</option>
+          <option value="biweekly">Bi-Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="yearly">Yearly</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Tahun</label>
+        <select id="filterYear"></select>
+      </div>
+
+      <div class="form-group">
+        <label>Pilih Periode</label>
+        <select id="filterValue"></select>
+      </div>
+
+      <!-- Multi-Select TL Diperpanjang -->
+      <div class="form-group">
+        <label>Filter TL (Multi)</label>
+        <select id="filterTl" multiple class="filter-multi-select" title="Tahan Ctrl / Tap untuk pilih banyak">
+          <option value="All" selected>All TL</option>
+        </select>
+      </div>
+
+      <!-- Multi-Select Skill Diperpanjang -->
+      <div class="form-group">
+        <label>Filter Skill (Multi)</label>
+        <select id="filterSkill" multiple class="filter-multi-select" title="Tahan Ctrl / Tap untuk pilih banyak">
+          <option value="All" selected>All Skill</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <button class="btn-submit" onclick="loadKpiData()">Tampilkan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Column Picker Card with Badge Style Toggle -->
+  <div class="card-box">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <div class="card-header-toggle" onclick="toggleColumnPicker()" style="flex: 1;">
+        <strong style="font-size: 12px; color: #1565c0;">📋 Panel Konfigurasi Kolom Tampil / Sembunyi (Klik untuk Expand/Hide)</strong>
+        <span id="pickerToggleIcon" style="font-size: 14px; font-weight: bold; margin-left: 10px;">▼</span>
+      </div>
+      <div>
+        <label style="font-size: 11px; font-weight: bold; cursor: pointer;">
+          <input type="checkbox" id="chkUseBadge" checked onchange="toggleBadgeStyle()"> Badge Warna (Poin & Rank)
+        </label>
+      </div>
+    </div>
+    <div class="field-picker-grid" id="fieldPickerGrid"></div>
+  </div>
+
+  <!-- Action Bar -->
+  <div class="action-bar">
+    <div class="search-wrap">
+      <label for="tableSearch">Cari Agent</label>
+      <input id="tableSearch" type="search" placeholder="Nama, TL, atau skill..." oninput="applyTableSearch()">
+    </div>
+    <div class="action-left">
+      <button class="btn-export btn-chart" onclick="openChartModal()">📊 Analytics Chart</button>
+      <span id="resultCount" style="font-size: 11px; opacity: 0.8;"></span>
+    </div>
+    <div class="action-right">
+      <button class="btn-export btn-excel" onclick="exportExcel()">Export Excel</button>
+      <button class="btn-export btn-jpg" onclick="exportImage('jpeg')">Export JPG</button>
+      <button class="btn-export btn-png" onclick="exportImage('png')">Export PNG</button>
+    </div>
+  </div>
+
+  <!-- Table Output Area -->
+  <div class="table-container" id="exportArea">
+    <table id="kpiTable">
+      <thead id="tableHead"></thead>
+      <tbody id="tableBody">
+        <tr>
+          <td colspan="25" class="loading-text">Memuat data breakdown poin...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modals -->
+<div class="modal-overlay" id="chartModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Visual Breakdown Analytics</h3>
+      <button class="modal-close" onclick="closeChartModal()">&times;</button>
+    </div>
+    <div class="chart-grid">
+      <div>
+        <h4 style="text-align: center; margin-bottom: 10px; font-size: 12px;">Top 5 Performers (All Poin)</h4>
+        <canvas id="barChart"></canvas>
+      </div>
+      <div>
+        <h4 style="text-align: center; margin-bottom: 10px; font-size: 12px;">Distribusi Poin Performa</h4>
+        <canvas id="donutChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="adminModal">
+  <div class="modal-content" style="max-width: 380px;">
+    <div class="modal-header">
+      <h3>🔑 Login Admin Dashboard</h3>
+      <button class="modal-close" onclick="closeAdminModal()">&times;</button>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+      <p style="font-size: 11px; opacity: 0.8;">Masukkan Master PIN Admin untuk membuka fitur edit catatan:</p>
+      <input type="password" id="inputAdminPin" placeholder="Masukkan PIN Admin..." style="padding: 8px 10px; border-radius: 5px; border: 1px solid var(--border-color); font-size: 13px;">
+      <button class="btn-submit" onclick="submitAdminPin()" style="padding: 9px;">Verifikasi Login</button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+  let globalOptions = { years: [], months: [], weeks: [], biweeks: [], tls: [], skills: [] };
+  let rawKpiData = [];
+  let sortState = { column: '', asc: true };
+  let searchQuery = '';
+  let chartInstances = {};
+
+  let isAdminLoggedIn = false;
+  let activeAdminPin = "";
+
+  // Default checklist Page 2 (Fokus ke detail Breakdown Poin)
+  let visibleFields = {
+    nama: true, team_leader: true, section: true,
+    prodAch: true, prodTgt: true, prodResult: true, prodPoint: true,
+    qaAch: true, qaTgt: true, qaResult: true, qaPoint: true,
+    atdAch: true, atdTgt: true, atdResult: true, atdPoint: true,
+    allResult: true, allPoinNoRules: true, rank: true,
+    keterangan_1: true, keterangan_2: true, keterangan_3: true
+  };
+
+  window.onload = function() {
+    if (localStorage.getItem('kpiTheme') === 'dark') {
+      document.body.classList.add('dark-mode');
+    }
+    renderFieldPicker();
+
+    fetch(`${GAS_API_URL}?action=getFilters`)
+      .then(res => res.json())
+      .then(options => {
+        globalOptions = options;
+        
+        const yearSelect = document.getElementById('filterYear');
+        yearSelect.innerHTML = '';
+        (options.years.length > 0 ? options.years : [2026]).forEach(y => {
+          yearSelect.innerHTML += `<option value="${y}">${y}</option>`;
+        });
+
+        const tlSelect = document.getElementById('filterTl');
+        tlSelect.innerHTML = '<option value="All" selected>All TL</option>';
+        options.tls.forEach(tl => {
+          tlSelect.innerHTML += `<option value="${tl}">${tl}</option>`;
+        });
+
+        const skillSelect = document.getElementById('filterSkill');
+        skillSelect.innerHTML = '<option value="All" selected>All Skill</option>';
+        if (options.skills && options.skills.length > 0) {
+          options.skills.forEach(s => {
+            skillSelect.innerHTML += `<option value="${s}">${s}</option>`;
+          });
+        }
+
+        updatePeriodOptions();
+      })
+      .catch(err => console.error("Error loading filters:", err));
+  };
+
+  function toggleTheme() {
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('kpiTheme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+  }
+
+  function toggleBadgeStyle() {
+    const isBadge = document.getElementById('chkUseBadge').checked;
+    document.body.classList.toggle('clean-style', !isBadge);
+  }
+
+  function toggleExecSummary() {
+    const grid = document.getElementById('execSummaryGrid');
+    const icon = document.getElementById('execToggleIcon');
+    grid.classList.toggle('show');
+    icon.innerText = grid.classList.contains('show') ? '▲' : '▼';
+  }
+
+  function toggleColumnPicker() {
+    const grid = document.getElementById('fieldPickerGrid');
+    const icon = document.getElementById('pickerToggleIcon');
+    grid.classList.toggle('show');
+    icon.innerText = grid.classList.contains('show') ? '▲' : '▼';
+  }
+
+  function updatePeriodOptions() {
+    const mode = document.getElementById('filterMode').value;
+    const valueSelect = document.getElementById('filterValue');
+    valueSelect.innerHTML = '';
+
+    if (mode === 'weekly') {
+      globalOptions.weeks.forEach(w => valueSelect.innerHTML += `<option value="${w}">${w}</option>`);
+    } else if (mode === 'biweekly') {
+      globalOptions.biweeks.forEach(bw => valueSelect.innerHTML += `<option value="${bw}">${bw}</option>`);
+    } else if (mode === 'monthly') {
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"];
+      for (let m = 1; m <= 12; m++) {
+        valueSelect.innerHTML += `<option value="${m}">Bulan ${m} (${monthNames[m-1]})</option>`;
+      }
+    } else if (mode === 'yearly') {
+      valueSelect.innerHTML = `<option value="ALL">Full Year</option>`;
+    }
+
+    loadKpiData();
+  }
+
+  function loadKpiData() {
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '<tr><td colspan="25" class="loading-text">Sedang mengambil data breakdown poin...</td></tr>';
+
+    const mode = document.getElementById('filterMode').value;
+    const year = document.getElementById('filterYear').value;
+    const value = document.getElementById('filterValue').value;
+
+    const tlSelect = document.getElementById('filterTl');
+    const selectedTls = Array.from(tlSelect.selectedOptions).map(opt => opt.value);
+    const tlParam = (selectedTls.includes('All') || selectedTls.length === 0) ? 'All' : selectedTls.join(',');
+
+    const skillSelect = document.getElementById('filterSkill');
+    const selectedSkills = Array.from(skillSelect.selectedOptions).map(opt => opt.value);
+    const skillParam = (selectedSkills.includes('All') || selectedSkills.length === 0) ? 'All' : selectedSkills.join(',');
+
+    const url = `${GAS_API_URL}?action=getData&mode=${mode}&year=${year}&value=${value}&tl=${encodeURIComponent(tlParam)}&skill=${encodeURIComponent(skillParam)}`;
+
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        rawKpiData = data;
+        renderExecutiveSummary();
+        renderTable();
+      })
+      .catch(err => {
+        tbody.innerHTML = '<tr><td colspan="25" class="loading-text">Gagal mengambil data KPI.</td></tr>';
+      });
+  }
+
+  function submitAdminPin() {
+    const pinInput = document.getElementById('inputAdminPin');
+    const pin = pinInput.value.trim();
+    if (!pin) return alert("Masukkan PIN Admin!");
+
+    fetch(`${GAS_API_URL}?action=checkPin&pin=${encodeURIComponent(pin)}`)
+      .then(res => res.json())
+      .then(res => {
+        if (res.success) {
+          isAdminLoggedIn = true;
+          activeAdminPin = pin;
+          const btn = document.getElementById('btnAdmin');
+          btn.classList.add('logged-in');
+          btn.innerText = "🔓 Admin Active (Logout)";
+          closeAdminModal();
+          pinInput.value = '';
+          alert("✅ Login Admin Berhasil!");
+          renderTable();
+        } else {
+          alert("❌ PIN Salah!");
+          pinInput.value = '';
+        }
+      });
+  }
+
+  function toggleAdminLogin() {
+    if (isAdminLoggedIn) {
+      isAdminLoggedIn = false;
+      activeAdminPin = "";
+      const btn = document.getElementById('btnAdmin');
+      btn.classList.remove('logged-in');
+      btn.innerText = "🔒 Login Admin";
+      renderTable();
+    } else {
+      document.getElementById('adminModal').style.display = 'flex';
+      document.getElementById('inputAdminPin').focus();
+    }
+  }
+
+  function closeAdminModal() {
+    document.getElementById('adminModal').style.display = 'none';
+  }
+
+  function toggleField(key, isChecked) {
+    visibleFields[key] = isChecked;
+    renderTable();
+  }
+
+  function renderFieldPicker() {
+    const fieldDefs = [
+      { key: 'nama', label: 'NAMA' }, { key: 'team_leader', label: 'TEAM LEADER' }, { key: 'section', label: 'SKILL' },
+      { key: 'prodAch', label: 'PROD ACH' }, { key: 'prodTgt', label: 'PROD TGT' }, { key: 'prodResult', label: 'PROD RESULT' }, { key: 'prodPoint', label: 'PROD POIN' },
+      { key: 'qaAch', label: 'QA ACH' }, { key: 'qaTgt', label: 'QA TGT' }, { key: 'qaResult', label: 'QA RESULT' }, { key: 'qaPoint', label: 'QA POIN' },
+      { key: 'atdAch', label: 'ATD ACH' }, { key: 'atdTgt', label: 'ATD TGT' }, { key: 'atdResult', label: 'ATD RESULT' }, { key: 'atdPoint', label: 'ATD POIN' },
+      { key: 'allResult', label: 'ALL RESULT' }, { key: 'allPoinNoRules', label: 'ALL POIN' }, { key: 'rank', label: 'RANK' },
+      { key: 'keterangan_1', label: 'Keterangan' }, { key: 'keterangan_2', label: 'Action Plan' }, { key: 'keterangan_3', label: 'Status Note' }
+    ];
+
+    const grid = document.getElementById('fieldPickerGrid');
+    grid.innerHTML = '';
+    fieldDefs.forEach(f => {
+      grid.innerHTML += `
+        <label class="field-checkbox">
+          <input type="checkbox" ${visibleFields[f.key] ? 'checked' : ''} onchange="toggleField('${f.key}', this.checked)">
+          ${f.label}
+        </label>
+      `;
+    });
+  }
+
+  function renderExecutiveSummary() {
+    if (!rawKpiData) return;
+    document.getElementById('execTotalAgent').innerText = `${rawKpiData.length} Agent Active`;
+
+    let sectionCount = {};
+    let tlMapping = {};
+    let penaltyCount = 0;
+    let qaDropCount = 0;
+
+    rawKpiData.forEach(item => {
+      let sec = item.section || 'Unassigned';
+      sectionCount[sec] = (sectionCount[sec] || 0) + 1;
+
+      let tl = item.team_leader || 'No TL';
+      if (!tlMapping[tl]) tlMapping[tl] = [];
+      tlMapping[tl].push(`${item.nama} (${sec})`);
+
+      let ruleVal = String(item.cxRules || '').trim().toUpperCase();
+      if (ruleVal && ruleVal !== 'NO RULES' && ruleVal !== 'NO RULE') {
+        penaltyCount++;
+      }
+
+      if (parseFloat(item.qaAch) < 90) qaDropCount++;
+    });
+
+    let secHtml = '';
+    for (let s in sectionCount) {
+      secHtml += `<div class="exec-item"><span>• ${s}</span><strong>${sectionCount[s]} agent</strong></div>`;
+    }
+    document.getElementById('execSectionBreakdown').innerHTML = secHtml || '<span style="opacity:0.6;">Kosong</span>';
+
+    let tlHtml = '';
+    for (let t in tlMapping) {
+      tlHtml += `<div style="margin-bottom:6px;"><strong>📌 ${t} (${tlMapping[t].length}):</strong><br><span style="opacity:0.8; font-size:10.5px;">• ${tlMapping[t].join('<br>• ')}</span></div>`;
+    }
+    document.getElementById('execTlMapping').innerHTML = tlHtml || '<span style="opacity:0.6;">Kosong</span>';
+
+    let sortedTop = [...rawKpiData].sort((a, b) => b.allPoinNoRules - a.allPoinNoRules);
+    let top1 = sortedTop.length > 0 ? sortedTop[0] : null;
+
+    let alertHtml = `
+      <div class="exec-item" style="color:#c62828;"><span>⚠️ CX Penalty:</span><strong>${penaltyCount} Agent</strong></div>
+      <div class="exec-item" style="color:#d35400;"><span>⚠️ QA < 90%:</span><strong>${qaDropCount} Agent</strong></div>
+    `;
+    if (top1) {
+      alertHtml += `<div class="exec-item" style="color:#2e7d32; margin-top:4px;"><span>🏆 Top #1:</span><strong>${top1.nama} (Poin ${top1.allPoinNoRules})</strong></div>`;
+    }
+    document.getElementById('execAlerts').innerHTML = alertHtml;
+  }
+
+  function applyTableSearch() {
+    searchQuery = document.getElementById('tableSearch').value.trim().toLowerCase();
+    renderTable();
+  }
+
+  function handleSort(key) {
+    if (sortState.column === key) {
+      sortState.asc = !sortState.asc;
+    } else {
+      sortState.column = key;
+      sortState.asc = true;
+    }
+    renderTable();
+  }
+
+  function saveNoteToSheet(inputEl, namaAgent, week, year, fieldName) {
+    if (!isAdminLoggedIn) {
+      alert("Akses Ditolak: Login Admin terlebih dahulu!");
+      return;
+    }
+
+    const val = inputEl.value;
+    inputEl.classList.remove('saved');
+    inputEl.classList.add('saving');
+
+    fetch(GAS_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ pin: activeAdminPin, namaAgent, week, year, fieldName, fieldValue: val })
+    })
+    .then(res => res.json())
+    .then(res => {
+      inputEl.classList.remove('saving');
+      if (res.success) {
+        inputEl.classList.add('saved');
+      } else {
+        alert("Gagal simpan: " + res.message);
+      }
+    });
+  }
+
+  function renderTable() {
+    const thead = document.getElementById('tableHead');
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+
+    if (!rawKpiData || rawKpiData.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="25" class="loading-text">Tidak ada data breakdown untuk periode ini.</td></tr>';
+      return;
+    }
+
+    let processedData = [...rawKpiData];
+    if (searchQuery) {
+      processedData = processedData.filter(item =>
+        [item.nama, item.team_leader, item.section].some(val => String(val || '').toLowerCase().includes(searchQuery))
+      );
+    }
+
+    document.getElementById('resultCount').innerText = `${processedData.length} agent`;
+
+    processedData.sort((a, b) => b.allPoinNoRules - a.allPoinNoRules);
+    processedData.forEach((item, idx) => item.rank = idx + 1);
+
+    if (sortState.column) {
+      processedData.sort((a, b) => {
+        let valA = a[sortState.column], valB = b[sortState.column];
+        if (typeof valA === 'string' && valA.endsWith('%')) valA = parseFloat(valA);
+        if (typeof valB === 'string' && valB.endsWith('%')) valB = parseFloat(valB);
+        if (valA < valB) return sortState.asc ? -1 : 1;
+        if (valA > valB) return sortState.asc ? 1 : -1;
+        return 0;
+      });
+    }
+
+    const isVisible = key => visibleFields[key] !== false;
+    const disabledAttr = isAdminLoggedIn ? '' : 'disabled';
+
+    let prodSubCols = [];
+    if (isVisible('prodAch')) prodSubCols.push({ key: 'prodAch', label: 'ACH' });
+    if (isVisible('prodTgt')) prodSubCols.push({ key: 'prodTgt', label: 'TGT' });
+    if (isVisible('prodResult')) prodSubCols.push({ key: 'prodResult', label: 'RESULT' });
+    if (isVisible('prodPoint')) prodSubCols.push({ key: 'prodPoint', label: 'POIN' });
+
+    let qaSubCols = [];
+    if (isVisible('qaAch')) qaSubCols.push({ key: 'qaAch', label: 'ACH' });
+    if (isVisible('qaTgt')) qaSubCols.push({ key: 'qaTgt', label: 'TGT' });
+    if (isVisible('qaResult')) qaSubCols.push({ key: 'qaResult', label: 'RESULT' });
+    if (isVisible('qaPoint')) qaSubCols.push({ key: 'qaPoint', label: 'POIN' });
+
+    let atdSubCols = [];
+    if (isVisible('atdAch')) atdSubCols.push({ key: 'atdAch', label: 'ACH' });
+    if (isVisible('atdTgt')) atdSubCols.push({ key: 'atdTgt', label: 'TGT' });
+    if (isVisible('atdResult')) atdSubCols.push({ key: 'atdResult', label: 'RESULT' });
+    if (isVisible('atdPoint')) atdSubCols.push({ key: 'atdPoint', label: 'POIN' });
+
+    let topRow = '<tr>', botRow = '<tr>';
+
+    if (isVisible('nama')) topRow += `<th rowspan="2" onclick="handleSort('nama')">NAMA</th>`;
+    if (isVisible('team_leader')) topRow += `<th rowspan="2" onclick="handleSort('team_leader')">TEAM LEADER</th>`;
+    if (isVisible('section')) topRow += `<th rowspan="2" onclick="handleSort('section')">SKILL</th>`;
+
+    if (prodSubCols.length > 0) {
+      topRow += `<th colspan="${prodSubCols.length}">PRODUCTIVITY 40%</th>`;
+      prodSubCols.forEach(c => botRow += `<th onclick="handleSort('${c.key}')">${c.label}</th>`);
+    }
+    if (qaSubCols.length > 0) {
+      topRow += `<th colspan="${qaSubCols.length}">QUALITY 50%</th>`;
+      qaSubCols.forEach(c => botRow += `<th onclick="handleSort('${c.key}')">${c.label}</th>`);
+    }
+    if (atdSubCols.length > 0) {
+      topRow += `<th colspan="${atdSubCols.length}">ATTENDANCE 10%</th>`;
+      atdSubCols.forEach(c => botRow += `<th onclick="handleSort('${c.key}')">${c.label}</th>`);
+    }
+
+    if (isVisible('allResult')) topRow += `<th rowspan="2" onclick="handleSort('allResultRaw')">ALL RESULT</th>`;
+    if (isVisible('allPoinNoRules')) topRow += `<th rowspan="2" onclick="handleSort('allPoinNoRules')">ALL POIN</th>`;
+    if (isVisible('rank')) topRow += `<th rowspan="2" onclick="handleSort('rank')">RANK</th>`;
+
+    if (isVisible('keterangan_1')) topRow += `<th rowspan="2">Keterangan</th>`;
+    if (isVisible('keterangan_2')) topRow += `<th rowspan="2">Action Plan</th>`;
+    if (isVisible('keterangan_3')) topRow += `<th rowspan="2">Status Note</th>`;
+
+    topRow += '</tr>'; botRow += '</tr>';
+    thead.innerHTML = topRow + (botRow !== '<tr></tr>' ? botRow : '');
+
+    processedData.forEach(item => {
+      let tr = document.createElement('tr');
+      let html = '';
+
+      if (isVisible('nama')) html += `<td style="text-align: left; font-weight: 600;">${item.nama}</td>`;
+      if (isVisible('team_leader')) html += `<td>${item.team_leader}</td>`;
+      if (isVisible('section')) html += `<td>${item.section}</td>`;
+
+      if (isVisible('prodAch')) html += `<td>${item.prodAch}</td>`;
+      if (isVisible('prodTgt')) html += `<td>${item.prodTgt}</td>`;
+      if (isVisible('prodResult')) html += `<td>${item.prodResult}</td>`;
+      if (isVisible('prodPoint')) html += `<td style="font-weight: bold;">${item.prodPoint}</td>`;
+
+      if (isVisible('qaAch')) html += `<td>${item.qaAch}</td>`;
+      if (isVisible('qaTgt')) html += `<td>${item.qaTgt}</td>`;
+      if (isVisible('qaResult')) html += `<td>${item.qaResult}</td>`;
+      if (isVisible('qaPoint')) html += `<td style="font-weight: bold;">${item.qaPoint}</td>`;
+
+      if (isVisible('atdAch')) html += `<td>${item.atdAch}</td>`;
+      if (isVisible('atdTgt')) html += `<td>${item.atdTgt}</td>`;
+      if (isVisible('atdResult')) html += `<td>${item.atdResult}</td>`;
+      if (isVisible('atdPoint')) html += `<td style="font-weight: bold;">${item.atdPoint}</td>`;
+
+      if (isVisible('allResult')) html += `<td style="font-weight: bold;">${item.allResult}</td>`;
+      if (isVisible('allPoinNoRules')) html += `<td><span class="badge-point">${item.allPoinNoRules}</span></td>`;
+      if (isVisible('rank')) html += `<td><span class="badge-rank">${item.rank}</span></td>`;
+
+      if (isVisible('keterangan_1')) html += `<td><input type="text" class="note-input" ${disabledAttr} value="${item.keterangan_1 || ''}" onchange="saveNoteToSheet(this, '${item.nama}', '${item.week}', '${item.year}', 'keterangan_1')"></td>`;
+      if (isVisible('keterangan_2')) html += `<td><input type="text" class="note-input" ${disabledAttr} value="${item.keterangan_2 || ''}" onchange="saveNoteToSheet(this, '${item.nama}', '${item.week}', '${item.year}', 'keterangan_2')"></td>`;
+      if (isVisible('keterangan_3')) html += `<td><input type="text" class="note-input" ${disabledAttr} value="${item.keterangan_3 || ''}" onchange="saveNoteToSheet(this, '${item.nama}', '${item.week}', '${item.year}', 'keterangan_3')"></td>`;
+
+      tr.innerHTML = html;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function openChartModal() {
+    if (!rawKpiData || rawKpiData.length === 0) return alert("Data kosong!");
+    document.getElementById('chartModal').style.display = 'flex';
+    renderCharts();
+  }
+
+  function closeChartModal() {
+    document.getElementById('chartModal').style.display = 'none';
+  }
+
+  function renderCharts() {
+    if (chartInstances.bar) chartInstances.bar.destroy();
+    if (chartInstances.donut) chartInstances.donut.destroy();
+
+    let topData = [...rawKpiData].sort((a, b) => b.allPoinNoRules - a.allPoinNoRules).slice(0, 5);
+    
+    const ctxBar = document.getElementById('barChart').getContext('2d');
+    chartInstances.bar = new Chart(ctxBar, {
+      type: 'bar',
+      data: {
+        labels: topData.map(d => d.nama),
+        datasets: [{ label: 'All Poin', data: topData.map(d => d.allPoinNoRules), backgroundColor: '#1565c0' }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    let pointCount = {};
+    rawKpiData.forEach(d => { 
+      let p = `Poin ${d.allPoinNoRules}`;
+      pointCount[p] = (pointCount[p] || 0) + 1; 
+    });
+
+    const ctxDonut = document.getElementById('donutChart').getContext('2d');
+    chartInstances.donut = new Chart(ctxDonut, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(pointCount),
+        datasets: [{ data: Object.values(pointCount), backgroundColor: ['#2e7d32', '#1565c0', '#e67e22', '#8e44ad', '#17a2b8', '#f39c12'] }]
+      },
+      options: { responsive: true }
+    });
+  }
+
+  function exportExcel() {
+    const table = document.getElementById('kpiTable');
+    const period = document.getElementById('filterValue').value;
+    const wb = XLSX.utils.table_to_book(table, { sheet: "Page2_Breakdown" });
+    XLSX.writeFile(wb, `KPI_Breakdown_${period}.xlsx`);
+  }
+
+  function exportImage(type) {
+    const area = document.getElementById('exportArea');
+    const period = document.getElementById('filterValue').value;
+    html2canvas(area, { scale: 2 }).then(canvas => {
+      const link = document.createElement('a');
+      link.download = `KPI_Breakdown_${period}.${type}`;
+      link.href = canvas.toDataURL(`image/${type}`);
+      link.click();
+    });
+  }
+</script>
+
+</body>
+</html>
